@@ -7,8 +7,8 @@ import traceback
 import time
 from datetime import datetime
 from typing import Dict, Any, Optional, List
-from axiom import Client
-from axiom.logging import AxiomHandler
+from axiom_py.client import Client
+from axiom_py.logging import AxiomHandler
 import logging
 
 # Default fields that are allowed to show in logs (allowlist approach)
@@ -102,6 +102,7 @@ class AxiomLogger:
             self.last_error_time = current_time
             
             log_entry = {
+                "level": "error",
                 "_excludeFromSlackNotification": exclude_from_slack,
                 "_type": "workflow",
                 "_service": self.service_name,
@@ -138,6 +139,7 @@ class AxiomLogger:
         
         try:
             log_entry = {
+                "level": "info",
                 "_type": "workflow",
                 "_service": self.service_name,
                 "context": context or {},
@@ -172,6 +174,7 @@ class AxiomLogger:
         
         try:
             log_entry = {
+                "level": "warning",
                 "_type": "workflow",
                 "_service": self.service_name,
                 "context": context or {},

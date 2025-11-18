@@ -3,7 +3,7 @@ Example usage of the AxiomLogger package.
 """
 
 import os
-from src import AxiomLogger
+from workflow_logger import AxiomLogger
 
 def main():
     """Demonstrate AxiomLogger usage."""
@@ -40,44 +40,44 @@ def main():
         )
         print(f"Error logged successfully: {success}")
     
-    # Example 2: Log info message
-    success = logger.info(
-        message="Processing batch completed",
-        context={
-            "aws_request_id": "87654321-4321-4321-4321-210987654321",
-            "function_name": "batch-processing-function",
-            "function_version": "v1.2.3",
-            "memory_limit": "256",
-            "remaining_time": "25000"
-        },
-        event_data={
-            "id": "batch_456", 
-            "name": "User Data Batch",
-            "record_count": 1000,
-            "sensitive_field": "private_data",  # This will be redacted
-            "status": "completed"
-        }
-    )
-    print(f"Info logged successfully: {success}")
+    # # Example 2: Log info message
+    # success = logger.info(
+    #     message="Processing batch completed",
+    #     context={
+    #         "aws_request_id": "87654321-4321-4321-4321-210987654321",
+    #         "function_name": "batch-processing-function",
+    #         "function_version": "v1.2.3",
+    #         "memory_limit": "256",
+    #         "remaining_time": "25000"
+    #     },
+    #     event_data={
+    #         "id": "batch_456", 
+    #         "name": "User Data Batch",
+    #         "record_count": 1000,
+    #         "sensitive_field": "private_data",  # This will be redacted
+    #         "status": "completed"
+    #     }
+    # )
+    # print(f"Info logged successfully: {success}")
     
-    # Example 3: Log warning
-    success = logger.warning(
-        message="High memory usage detected",
-        context={
-            "aws_request_id": "abcd1234-5678-9012-3456-789012345678",
-            "function_name": "memory-intensive-function",
-            "function_version": "v2.0.1",
-            "memory_limit": "512",
-            "remaining_time": "15750"
-        },
-        event_data={
-            "id": "alert_789",
-            "name": "Memory Alert",
-            "server_details": "sensitive_server_info",  # This will be redacted
-            "status": "warning"
-        }
-    )
-    print(f"Warning logged successfully: {success}")
+    # # Example 3: Log warning
+    # success = logger.warning(
+    #     message="High memory usage detected",
+    #     context={
+    #         "aws_request_id": "abcd1234-5678-9012-3456-789012345678",
+    #         "function_name": "memory-intensive-function",
+    #         "function_version": "v2.0.1",
+    #         "memory_limit": "512",
+    #         "remaining_time": "15750"
+    #     },
+    #     event_data={
+    #         "id": "alert_789",
+    #         "name": "Memory Alert",
+    #         "server_details": "sensitive_server_info",  # This will be redacted
+    #         "status": "warning"
+    #     }
+    # )
+    # print(f"Warning logged successfully: {success}")
 
 if __name__ == "__main__":
     main()

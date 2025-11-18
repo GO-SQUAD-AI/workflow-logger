@@ -32,7 +32,7 @@ setup(
         "Topic :: System :: Monitoring",
     ],
     keywords="logging axiom monitoring error-tracking workflow",
-    packages=find_packages(include=["src", "src.*"]),
+    packages=find_packages(include=["workflow_logger", "workflow_logger.*"]),
     python_requires=">=3.8",
     install_requires=[
         "axiom-py>=0.4.0",
