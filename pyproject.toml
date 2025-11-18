@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "workflow-logger"
+version = "0.1.0"
+description = "Axiom logging utility for error tracking and monitoring"
+readme = "README.md"
+authors = [
+    {name = "Squad"},
+]
+maintainers = [
+    {name = "Squad"},
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Logging",
+    "Topic :: System :: Monitoring",
+]
+keywords = ["logging", "axiom", "monitoring", "error-tracking", "workflow"]
+dependencies = [
+    "axiom-py>=0.4.0",
+]
+requires-python = ">=3.8"
+
+[project.urls]
+Homepage = "https://github.com/GO-SQUAD-AI/workflow-logger"
+Repository = "https://github.com/GO-SQUAD-AI/workflow-logger"
+"Bug Tracker" = "https://github.com/GO-SQUAD-AI/workflow-logger/issues"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "black>=22.0.0",
+    "flake8>=5.0.0",
+    "mypy>=0.991",
+]
+
+[tool.setuptools.packages.find]
+include = ["src*"]
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+include = '\.pyi?$'
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
