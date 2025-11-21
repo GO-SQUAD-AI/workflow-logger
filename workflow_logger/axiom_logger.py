@@ -6,10 +6,11 @@ Supports both Axiom cloud logging and local console output.
 import json
 import logging
 import os
+import re
 import time
 import traceback
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Pattern, Union
 
 from axiom_py.client import Client
 from axiom_py.logging import AxiomHandler
@@ -20,7 +21,14 @@ DEFAULT_ALLOWED_FIELDS = ["id"]
 
 
 class AxiomLogger:
-    """Utility class for logging errors and events to Axiom."""
+    """
+    Utility class for logging errors and events to Axiom.
+
+    Supports efficient field filtering using:
+    - Literal strings: "id", "name", "data.score"
+    - Compiled regex: re.compile(r'^user_\d+$'), re.compile(r'.*_id$')
+    - Mixed lists: ["id", "name", re.compile(r'^data\.score$')]
+    """
 
     def __init__(
         self,
@@ -33,6 +41,8 @@ class AxiomLogger:
         self.service_name = service_name
         base_fields = allowed_fields or DEFAULT_ALLOWED_FIELDS
         self.allowed_fields = base_fields + ["__body_unwrapped"]
+        # Compile regex patterns for efficient matching
+        self._compiled_patterns = self._compile_patterns(self.allowed_fields)
         self.token = axiom_token
         self.dataset = axiom_dataset
         self.client = None
@@ -71,15 +81,75 @@ class AxiomLogger:
         else:
             print("Warning: Axiom token not provided. Axiom logging disabled.")
 
-    def redact_sensitive_fields(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _compile_patterns(
+        self, allowed_fields: List[Union[str, Pattern]]
+    ) -> List[Pattern]:
+        """
+        Compile field patterns into regex objects for efficient matching.
+
+        Args:
+            allowed_fields: List of field patterns (literal strings or compiled regex)
+
+        Returns:
+            List of compiled regex patterns
+        """
+        compiled_patterns = []
+
+        for field in allowed_fields:
+            if isinstance(field, Pattern):
+                # Already a compiled regex
+                compiled_patterns.append(field)
+            else:
+                # Convert literal string to exact match regex (case-insensitive)
+                pattern_str = str(field).lower()
+                escaped = re.escape(pattern_str)
+
+                try:
+                    compiled_pattern = re.compile(f"^{escaped}$", re.IGNORECASE)
+                    compiled_patterns.append(compiled_pattern)
+                except re.error as e:
+                    print(f"Warning: Invalid pattern '{field}': {e}")
+
+        return compiled_patterns
+
+    def _is_field_allowed(self, field_path: str, current_path: str = "") -> bool:
+        """
+        Check if a field is allowed using pre-compiled regex patterns.
+        Much more efficient than the previous wildcard approach.
+
+        Args:
+            field_path: The field name to check
+            current_path: The current nested path context
+
+        Returns:
+            bool: True if the field is allowed, False otherwise
+        """
+        full_path = f"{current_path}.{field_path}" if current_path else field_path
+
+        # Test against all compiled patterns
+        for pattern in self._compiled_patterns:
+            # Check both field name and full path
+            if pattern.match(field_path) or pattern.match(full_path):
+                return True
+
+        return False
+
+    def redact_sensitive_fields(
+        self, data: Dict[str, Any], current_path: str = ""
+    ) -> Dict[str, Any]:
         """
         Recursively redacts fields from a dictionary that are not in the allowed_fields list.
-        Only fields explicitly listed in allowed_fields will be shown, all others are redacted.
+        Only fields matching the allowed patterns will be shown, all others are redacted.
+
+        Supports two types of patterns:
+        - Literal strings: "id", "name", "data.score" (exact matches, case-insensitive)
+        - Compiled regex: re.compile(r'.*_id$'), re.compile(r'^user_\d+$')
 
         If data only has one property called 'body' containing a JSON string, it will be unwrapped.
 
         Args:
             data: The dictionary to redact fields from
+            current_path: The current nested path for pattern matching
 
         Returns:
             Dict with non-allowed fields replaced with "[REDACTED]"
@@ -88,7 +158,7 @@ class AxiomLogger:
             return data
 
         # Check if data only has one prop 'body' and unwrap if it's a JSON string
-        if len(data) == 1 and "body" in data:
+        if len(data) == 1 and "body" in data and not current_path:
             body_value = data["body"]
             if isinstance(body_value, str):
                 try:
@@ -102,24 +172,28 @@ class AxiomLogger:
                     pass
 
         redacted_data = {}
-        allowed_fields_lower = [field.lower() for field in self.allowed_fields]
 
         for key, value in data.items():
-            if key.lower() not in allowed_fields_lower:
-                redacted_data[key] = "[REDACTED]"
-            elif isinstance(value, dict):
-                redacted_data[key] = self.redact_sensitive_fields(value)
-            elif isinstance(value, list):
-                redacted_data[key] = [
-                    (
-                        self.redact_sensitive_fields(item)
-                        if isinstance(item, dict)
-                        else item
+            if self._is_field_allowed(key, current_path):
+                if isinstance(value, dict):
+                    nested_path = f"{current_path}.{key}" if current_path else key
+                    redacted_data[key] = self.redact_sensitive_fields(
+                        value, nested_path
                     )
-                    for item in value
-                ]
+                elif isinstance(value, list):
+                    nested_path = f"{current_path}.{key}" if current_path else key
+                    redacted_data[key] = [
+                        (
+                            self.redact_sensitive_fields(item, nested_path)
+                            if isinstance(item, dict)
+                            else item
+                        )
+                        for item in value
+                    ]
+                else:
+                    redacted_data[key] = value
             else:
-                redacted_data[key] = value
+                redacted_data[key] = "[REDACTED]"
 
         return redacted_data
 
