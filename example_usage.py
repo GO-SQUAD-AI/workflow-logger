@@ -36,6 +36,7 @@ def main():
             re.compile(r"^evaluation\..*_id$"),  # Regex: any _id in evaluation context
             re.compile(r"^user_\d+$"),  # Regex: user_123, user_456, etc.
         ],
+        axiom_output=False,
         console_output=True,
     )
 
@@ -104,6 +105,11 @@ def main():
 
     # Example 4: Log an error unwrapping body
     try:
+        logger.info(
+            "@@@ Dividing by zero to trigger error logging...",
+            context={},
+            event_data={"n": 10, "d": 0},
+        )
         # Simulate an error
         result = 10 / 0
     except Exception as e:

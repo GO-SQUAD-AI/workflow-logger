@@ -36,6 +36,7 @@ class AxiomLogger:
         axiom_token: str,
         axiom_dataset: str,
         allowed_fields: Optional[List[str]] = None,
+        axiom_output: bool = True,
         console_output: bool = True,
     ):
         self.service_name = service_name
@@ -48,27 +49,13 @@ class AxiomLogger:
         self.client = None
         self.handler = None
         self.console_handler = None
-        self.console_logger = None
         self.axiom_logger = None
         self.last_error_time = None
         self.console_output = console_output
 
-        # Set up console logger
-        self.console_logger = None
-        if self.console_output:
-            self.console_logger = logging.getLogger(f"console_{__name__}_{id(self)}")
-            self.console_handler = logging.StreamHandler()
-            formatter = logging.Formatter(
-                "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-            )
-            self.console_handler.setFormatter(formatter)
-            self.console_logger.addHandler(self.console_handler)
-            # Prevent propagation to avoid duplicate console output
-            self.console_logger.propagate = False
-
         # Set up Axiom logger
         self.axiom_logger = None
-        if self.token:
+        if self.token and axiom_output:
             try:
                 self.client = Client(token=self.token)
                 self.handler = AxiomHandler(self.client, self.dataset)
@@ -236,8 +223,10 @@ class AxiomLogger:
                 error_msg += f" | Context: {json.dumps(context, default=str)}"
 
             # Log to console (if enabled)
-            if self.console_logger:
-                self.console_logger.error(error_msg, exc_info=True)
+            if self.console_output:
+                print(
+                    f"[ERROR] {error_msg} | Context: {json.dumps(context)}, Event Data: {json.dumps(event_data)}"
+                )
 
             # Log to Axiom (if available)
             if self.axiom_logger:
@@ -287,8 +276,10 @@ class AxiomLogger:
                 info_msg += f" | Context: {json.dumps(context, default=str)}"
 
             # Log to console (if enabled)
-            if self.console_logger:
-                self.console_logger.info(info_msg)
+            if self.console_output:
+                print(
+                    f"[INFO] {info_msg} | Context: {json.dumps(context)}, Event Data: {json.dumps(event_data)}"
+                )
 
             # Log to Axiom (if available)
             if self.axiom_logger:
@@ -334,8 +325,10 @@ class AxiomLogger:
                 warning_msg += f" | Context: {json.dumps(context, default=str)}"
 
             # Log to console (if enabled)
-            if self.console_logger:
-                self.console_logger.warning(warning_msg)
+            if self.console_output:
+                print(
+                    f"[WARNING] {warning_msg} | Context: {json.dumps(context)}, Event Data: {json.dumps(event_data)}"
+                )
 
             # Log to Axiom (if available)
             if self.axiom_logger:
